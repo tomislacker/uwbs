@@ -1,0 +1,18 @@
+#!/bin/bash
+
+changedDays=${1:-1}
+
+changedFiles=(`find ~/.purple/logs -type f -mtime -${changedDays} -print | egrep -v "/\.system/" | sort`)
+
+echo "Found ${#changedFiles[*]} changed files..."
+#sleep 1
+
+#i=1
+#for thisFile in ${changedFiles[*]}; do
+#	echo "[${i}] ${thisFile}"
+#	let i++
+#done
+#exit
+
+tail -n 15 ${changedFiles[*]} | sed 's/<[^>]*>//g' | egrep --color=always "([^\(\):]+|$)" | less
+

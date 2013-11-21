@@ -1,0 +1,8 @@
+#!/bin/bash
+
+_watchTimer_Default=1
+watchTimer=${1:-${_watchTimer_Default}}
+
+echo "watchTime=${watchTimer}"
+watch --color -n ${watchTimer} genlop -c
+

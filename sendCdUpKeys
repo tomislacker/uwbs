@@ -1,0 +1,3 @@
+#!/bin/bash
+xvkbd -xsendevent -text 'cd ..\r'
+

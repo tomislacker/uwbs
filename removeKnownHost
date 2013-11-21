@@ -1,0 +1,37 @@
+#!/bin/bash
+
+DEFPATH_SSH_KEYGEN=/usr/bin/ssh-keygen
+
+# Save first argument as host to be removed
+HOST_TO_REMOVE="$1"
+
+###
+# Attempt to find the `ssh-keygen` binary in the $PATH
+###
+SSH_KEYGEN=`which ssh-keygen 2>>/dev/null`
+
+	# Use default if ssh-keygen was unavailable in the path
+	[[ ${#SSH_KEYGEN} -eq 0 ]] && echo Using default SSH_KEYGEN && SSH_KEYGEN=$DEFPATH_SSH_KEYGEN
+
+	# Error out if we couldn't find an executable `ssh-keygen`
+	if [ ! -x "${SSH_KEYGEN}" ]; then
+		echo "SSH_KEYGEN='${SSH_KEYGEN}' is not executable" 1>&2
+		exit 254
+	fi
+
+###
+# Ensure users's .ssh/known_hosts file exists
+###
+KNOWN_HOSTS_FILE="${HOME}/.ssh/known_hosts"
+	
+	# Error out if we couldn't determine a correct known_hosts file
+	if [ ! -f "${KNOWN_HOSTS_FILE}" ]; then
+		echo "KNOWN_HOSTS_FILE='${KNOWN_HOSTS_FILE}' is not a file" 1>&2
+		exit 253
+	fi
+
+###
+# Call `ssh-keygen` to remove an entry from the known_hosts file
+###
+$SSH_KEYGEN -f "${KNOWN_HOSTS_FILE}" -R "${HOST_TO_REMOVE}"
+

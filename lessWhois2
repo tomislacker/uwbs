@@ -1,0 +1,28 @@
+#!/bin/bash
+
+whoisData=`whois ${@} 2>&1 `
+
+getFieldValue ()
+{
+	thisFieldName="$1"
+	thisText="$2"
+	matchIdx="$3"
+
+	if [[ ${#matchIdx} -eq 0 ]]; then
+		matchIdx="0"
+	fi
+
+	let matchLineNo="${matchIdx} + 1"
+#	echo "matchLineNo: ${matchLineNo}" >> /dev/stderr
+#	echo "thisFieldName: ${thisFieldName}" >> /dev/stderr
+	matchingLine="`echo "${thisText}" | egrep "^${thisFieldName}:"`"
+#	echo "matchingLine: \"${matchingLine}\"" >> /dev/stderr
+	fieldValue="`echo "${matchingLine}" | sed "s/^.\{${#thisFieldName}\}:[[:space:]]*//g"`"
+#	echo "fieldValue  : \"${fieldValue}\"" >> /dev/stderr
+	echo "${fieldValue}"
+}
+
+for i in NetRange CIDR OriginAS NetName NetHandle OrgName Address City StateProv PostalCode Country RegDate Updated OgTech{Handle,Name,Phone,Email} OrgAbuse{Handle,Name,Phone,Email}; do
+	echo -e -n "${i}\t\t\t"
+	echo $(getFieldValue "${i}" "${whoisData}" )
+done

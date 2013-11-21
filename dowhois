@@ -1,0 +1,27 @@
+#!/bin/bash
+
+myHost="$*"
+echo "${myHost}" | grep "://" >&/dev/null
+hasProto=$?
+echo "${myHost}" | egrep "/$" >&/dev/null
+hasTrailSlash=$?
+
+#echo -e "myHost        \t'${myHost}'"
+#echo -e "hasProto      \t'${hasProto}'"
+#echo -e "hasTrailSlash \t'${hasTrailSlash}'"
+
+if [[ $hasProto -eq 0 ]]; then
+	myHost=`echo "${myHost}" | sed 's/^.*:\/\///g'`
+fi
+
+#echo -e "\t[${LINENO}] '${myHost}'"
+
+if [[ $hasTrailSlash -eq 0 ]]; then
+	myHost=`echo "${myHost}" | sed 's/\/$//g'`
+fi
+
+#echo -e "\t[${LINENO}] '${myHost}'"
+
+#echo -e "myHost        \t'${myHost}'"
+
+whois ${myHost} | less
