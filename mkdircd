@@ -1,0 +1,12 @@
+#!/bin/bash
+
+dirPath=$*
+
+mkdir -p "${dirPath}"
+mkdirExit=$?
+[[ $mkdirExit -ne 0 ]] && exit $mkdirExit
+
+cd "${dirPath}"
+cdExit=$?
+[[ $cdExit -ne 0 ]] && exit $cdExit
+

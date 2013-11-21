@@ -1,0 +1,7 @@
+#!/bin/bash
+
+until [ -d /var/tmp/portage/.distcc ]; do
+	echo "`date`: Waiting for .distcc"
+	sleep 1
+done
+( DISTCC_DIR=/var/tmp/portage/.distcc distccmon-text 1 | egrep -v "^\s*$" )
