@@ -17,11 +17,12 @@ Feel free to send me a pull request, I'll likely allow them all
 ### How I Implement It
 
 Clone a copy
-	```bash
+	```
 		git clone https://github.com/tomislacker/uwbs.git ~/.uwbs
+	```
 
 Create a profile.d entry to adjust my $PATH
-	```bash
+	```
 		echo "[ -d \"`readlink -m ~`/.uwbs\" ] && export PATH=\"${PATH}:`readlink -m ~`/.uwbs\"" \
 			| sudo tee -a /etc/profile.d/uwbs.sh
 	```
