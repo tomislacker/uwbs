@@ -81,7 +81,6 @@ printTitle ()
 	echo -e "${BORDER_STRING_RIGHT}\n${horizBorderString}\033[0m"
 }
 
-echo "[Arg Count=$#]"
 if [[ $# -ne 0 ]]; then
 	printTitle $*
 fi
