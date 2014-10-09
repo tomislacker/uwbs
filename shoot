@@ -30,11 +30,142 @@
 # your window manager or similar, so you can bind it to a keycombination.
 #
 
-function uploadImage {
-  curl -s -F "image=@$1" -F "key=486690f872c678126a2c09a9e196ce1b" http://imgur.com/api/upload.xml | grep -E -o "<original_image>(.)*</original_image>" | grep -E -o "http://i.imgur.com/[^<]*"
+IMGUR_KEY="486690f872c678126a2c09a9e196ce1b"
+
+NOTIFY_HEAD_VALUE=
+NOTIFY_TIMEOUT=5000000
+export TEMP_IMAGE_PATH=
+TEMP_IMAGE_EXT=".jpg"
+
+RESPONSE_OUTPUT_FILE=$(mktemp)
+
+DO_EXIT_CLEANUP=y
+
+setImgTempPath ()
+{
+    export TEMP_IMAGE_PATH="$1"
+    echo "[setImgTempPath] '${TEMP_IMAGE_PATH}'" >&2
 }
 
-scrot -s "shot.png" 
-uploadImage "shot.png" | xclip -selection c
-rm "shot.png"
-notify-send "Done"
+getImgTempPath ()
+{
+    local suffix="$1"
+
+    if [ -z "$TEMP_IMAGE_PATH" ]; then
+        echo -en "[getImgTempPath]" >&2
+        setImgTempPath "$(mktemp --dry-run --suffix="${suffix}${TEMP_IMAGE_EXT}")"
+    fi
+
+    echo "[getImgTempPath] '${TEMP_IMAGE_PATH}'" >&2
+    echo -n "$TEMP_IMAGE_PATH"
+}
+
+uploadImage ()
+{
+    local tempImgPath="$1"
+
+    [ -z "$tempImgPath" ] \
+        && ( echo -e "[uploadImage] No img provided..." >&2 ) \
+        && tempImgPath="$(getImgTempPath)" \
+        && ( echo -e "[uploadImage] \tUsing '${tempImgPath}'" >&2 )
+
+    if [ -e "$tempImgPath" ]; then
+        echo -e "[uploadImage] file=\"$(file "${tempImgPath}")\"" >&2
+    else
+        echo -e "[uploadImage][NOFILE] \"${tempImgPath}\"" >&2
+        exit 1
+    fi
+
+    if [ -n "$IMGUR_KEY" ]; then
+        imgurURL=$(uploadToImgur "$tempImgPath" "$IMGUR_KEY")
+
+        echo -e "[imgur.url]\t'${imgurURL}'" >&2
+        echo -n "$imgurURL" \
+            | copyTextToClipboard
+    fi
+}
+
+uploadToImgur ()
+{
+    local tempImgPath="$1"
+    local imgurKey="$2"
+
+    [ -z "$tempImgPath" ] \
+        && ( echo -e "[uploadToImgur] No image path provided." ) \
+        && tempImgPath="$(getImgTempPath)"
+
+    [ -z "$imgurKey" ] \
+        && imgurKey="$IMGUR_KEY"
+
+    echo -e "[uploadToImgur] \"${tempImgPath}\" \"${imgurKey}\"" >&2
+    echo -e "\tcurl \\\n\t-s \\\n\t-F \"image=@${tempImgPath}\" \\\n\t-F \"key=${imgurKey}\" \\\n\thttp://imgur.com/api/upload.xml\n" >&2
+    curl \
+        -s \
+        -F "image=@${tempImgPath}" \
+        -F "key=${imgurKey}" \
+        http://imgur.com/api/upload.xml \
+            | tee "$RESPONSE_OUTPUT_FILE" \
+            | tee -a /tmp/imgurupload.log \
+            | grep -E -o "<original_image>(.)*</original_image>" \
+            | grep -E -o "http://i.imgur.com/[^<]*"
+    [ -e "$RESPONSE_OUTPUT_FILE" ] && \
+        echo -e "[uploadToImgur][response] ${RESPONSE_OUTPUT_FILE}" >&2
+
+}
+
+copyTextToClipboard ()
+{
+    xclip -selection c \
+        || return 1
+}
+
+exitCleanup ()
+{
+    rm -f \
+        "$(getImgTempPath)" \
+        "$RESPONSE_OUTPUT_FILE" \
+        >>/dev/null 2>&1
+}
+
+shotSelect ()
+{
+    local filePath=$1
+
+    [ -n "$filePath" ] \
+        && setImgTempPath "$1" \
+        || filePath="$(getImgTempPath)"
+
+    scrot -s "$filePath" \
+        || return 1
+    
+    if [ -n "$DO_EXIT_CLEANUP" ]; then
+        trap exitCleanup EXIT
+    fi
+}
+
+notifyMsg ()
+{
+    local msgContents="$1"
+    local msgHeader="Imgur Post: $(date)"
+
+    echo -e "[notify][${NOTIFY_TIMEOUT}] \"${msgHeader}\" \"${msgContents}\"" >&2
+
+    notify-send \
+        -t $NOTIFY_TIMEOUT \
+        "$msgHeader" \
+        "$msgContents" &
+    echo -e "[notify][exitval] \t$?"
+}
+
+uploadImagePath="$(getImgTempPath)"
+if shotSelect "$uploadImagePath" ; then
+    notifyMsg 'Screenshot taken'
+    if uploadImage "$uploadImagePath" ; then
+        notifyMsg 'Upload complete and URL on clipboard'
+    else
+        notifyMsg 'Upload failed...'
+    fi
+else
+    notifyMsg 'Screenshot failed'
+fi
+
