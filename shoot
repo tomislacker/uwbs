@@ -37,8 +37,6 @@ NOTIFY_TIMEOUT=5000000
 export TEMP_IMAGE_PATH=
 TEMP_IMAGE_EXT=".jpg"
 
-RESPONSE_OUTPUT_FILE=$(mktemp)
-
 DO_EXIT_CLEANUP=y
 
 setImgTempPath ()
@@ -104,12 +102,9 @@ uploadToImgur ()
         -F "image=@${tempImgPath}" \
         -F "key=${imgurKey}" \
         http://imgur.com/api/upload.xml \
-            | tee "$RESPONSE_OUTPUT_FILE" \
             | tee -a /tmp/imgurupload.log \
             | grep -E -o "<original_image>(.)*</original_image>" \
             | grep -E -o "http://i.imgur.com/[^<]*"
-    [ -e "$RESPONSE_OUTPUT_FILE" ] && \
-        echo -e "[uploadToImgur][response] ${RESPONSE_OUTPUT_FILE}" >&2
 
 }
 
@@ -123,7 +118,6 @@ exitCleanup ()
 {
     rm -f \
         "$(getImgTempPath)" \
-        "$RESPONSE_OUTPUT_FILE" \
         >>/dev/null 2>&1
 }
 
