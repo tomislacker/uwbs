@@ -102,7 +102,6 @@ uploadToImgur ()
         -F "image=@${tempImgPath}" \
         -F "key=${imgurKey}" \
         http://imgur.com/api/upload.xml \
-            | tee -a /tmp/imgurupload.log \
             | grep -E -o "<original_image>(.)*</original_image>" \
             | grep -E -o "http://i.imgur.com/[^<]*"
 
