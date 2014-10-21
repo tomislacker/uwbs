@@ -1,10 +1,16 @@
 #!/bin/bash
 
+###
+# Sanity Check
+###
 if ! which xfconf-query >&/dev/null; then
     echo "ERROR: Could not find xfconf-query in \$PATH" >&2
     exit 1
 fi
 
+###
+# Use xfconf-query to determine all workspace names
+###
 xfconf-query \
     -c xfwm4 \
     -p /general/workspace_names \
