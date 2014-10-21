@@ -1,6 +1,17 @@
 #!/bin/bash
 
 ###
+# Sanity Check
+###
+if ! which xfconf-query >&/dev/null; then
+    echo "ERROR: Could not find xfconf-query in \$PATH" >&2
+    exit 1
+elif ! which workspace.getNames >&/dev/null; then
+  echo "ERROR: Could not find workspace.getNames in \$PATH" >&2
+  exit 1
+fi
+
+###
 # Enumerate all workspace names
 ###
 workspaceNames=( )
@@ -23,7 +34,6 @@ for workspaceIndex in $(seq 0 $((${#workspaceNames[*]}-1))); do
   )
 done
 
-echo xfconf-query ${xconfArgs[*]}
 eval xfconf-query ${xconfArgs[*]}
 
 
