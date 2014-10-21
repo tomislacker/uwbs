@@ -6,12 +6,20 @@ workspaceName=$2
 ###
 # Sanity Check
 ###
-if [ -z "$workspaceIndex" ]; then
+if ! which xfconf-query >&/dev/null; then
+    echo "ERROR: Could not find xfconf-query in \$PATH" >&2
+    exit 1
+elif [ -z "$workspaceIndex" ]; then
   echo "ERROR: No \$workspaceIndex provided" >&2
   exit 1
 elif [ "$workspaceName" == "-" ]; then
   workspaceName="Workspace $((${workspaceIndex}+1))"
 elif [ -z "$workspaceName" ]; then
+  if ! which zenity >&/dev/null; then
+    echo "ERROR: Could not find zenity in \$PATH" >&2
+    exit 1
+  fi
+  
   workspaceName=$(zenity --entry --title="Workspace[${workspaceIndex}] Name" --text="New Name:" --entry-text="$(workspace.getName ${workspaceIndex})")
 fi
 
