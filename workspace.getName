@@ -2,20 +2,32 @@
 
 workspaceIndex=$1
 
+###
+# Sanity Check
+###
 if [ -z "$workspaceIndex" ]; then
     echo "ERROR: No \$workspaceIndex provided" >&2
     exit 1
 fi
 
+###
+# Enumerate all workspace names
+###
 workspaceNames=( )
 while read -r workspaceName; do
     workspaceNames+=( "$workspaceName" )
 done < <(workspace.getNames)
 
+###
+# If our workspaceIndex is out of range, throw an error
+###
 if [[ $workspaceIndex -gt $((${#workspaceNames[*]}-1)) ]]; then
     echo "ERROR: \$workspaceIndex out of bounds (0-$((${#workspaceNames[*]}-1)))" >&2
     exit 50
 fi
 
+###
+# Output our workspaceIndex's name
+###
 echo "${workspaceNames[${workspaceIndex}]}"
 
