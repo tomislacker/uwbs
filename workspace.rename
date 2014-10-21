@@ -20,7 +20,14 @@ elif [ -z "$workspaceName" ]; then
     exit 1
   fi
   
-  workspaceName=$(zenity --entry --title="Workspace[${workspaceIndex}] Name" --text="New Name:" --entry-text="$(workspace.getName ${workspaceIndex})")
+  workspaceName=$(zenity --entry --title="Workspace[${workspaceIndex}] Name" --text="New Name:" --entry-text="$(workspace.getName ${workspaceIndex})" 2>>/dev/null)
+  
+  # See if 'Cancel' was hit in Zenity indicating the user wanted to cancel the
+  # rename operation
+  if [[ $? -ne 0 ]]; then
+    echo "Warning: Canceling renaming operation of workspaceIndex=${workspaceIndex}" >&2
+    exit 0
+  fi
 fi
 
 ###
