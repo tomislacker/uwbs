@@ -1,0 +1,18 @@
+#!/bin/bash
+
+###
+# Sanity Check
+###
+if ! which workspace.rename >&/dev/null; then
+    echo "ERROR: Could not find workspace.rename in \$PATH" >&2
+    exit 1
+elif ! which workspace.getCurrentIndex >&/dev/null; then
+  echo "ERROR: Could not find workspace.getCurrentIndex in \$PATH" >&2
+  exit 1
+fi
+
+workspaceIndex=$1
+
+[ -z "$workspaceIndex" ] && workspaceIndex=$(workspace.getCurrentIndex)
+workspace.rename ${workspaceIndex} -
+
