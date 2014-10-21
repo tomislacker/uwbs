@@ -6,8 +6,11 @@ workspaceIndex=$1
 # Sanity Check
 ###
 if [ -z "$workspaceIndex" ]; then
-    echo "ERROR: No \$workspaceIndex provided" >&2
-    exit 1
+  echo "ERROR: No \$workspaceIndex provided" >&2
+  exit 1
+elif ! which workspace.getNames >&/dev/null; then
+  echo "ERROR: Could not find workspace.getNames in \$PATH" >&2
+  exit 1
 fi
 
 ###
@@ -15,15 +18,15 @@ fi
 ###
 workspaceNames=( )
 while read -r workspaceName; do
-    workspaceNames+=( "$workspaceName" )
+  workspaceNames+=( "$workspaceName" )
 done < <(workspace.getNames)
 
 ###
 # If our workspaceIndex is out of range, throw an error
 ###
 if [[ $workspaceIndex -gt $((${#workspaceNames[*]}-1)) ]]; then
-    echo "ERROR: \$workspaceIndex out of bounds (0-$((${#workspaceNames[*]}-1)))" >&2
-    exit 50
+  echo "ERROR: \$workspaceIndex out of bounds (0-$((${#workspaceNames[*]}-1)))" >&2
+  exit 50
 fi
 
 ###
