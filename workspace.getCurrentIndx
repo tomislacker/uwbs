@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if ! which wmctrl >&/dev/null; then
+    echo "ERROR: Could not find wmctrl in \$PATH" >&2
+    exit 1
+fi
+
+wmctrl -d \
+    | grep '*' \
+    | cut -d " " -f1

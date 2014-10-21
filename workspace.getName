@@ -1,0 +1,21 @@
+#!/bin/bash
+
+workspaceIndex=$1
+
+if [ -z "$workspaceIndex" ]; then
+    echo "ERROR: No \$workspaceIndex provided" >&2
+    exit 1
+fi
+
+workspaceNames=( )
+while read -r workspaceName; do
+    workspaceNames+=( "$workspaceName" )
+done < <(workspace.getNames)
+
+if [[ $workspaceIndex -gt $((${#workspaceNames[*]}-1)) ]]; then
+    echo "ERROR: \$workspaceIndex out of bounds (0-$((${#workspaceNames[*]}-1)))" >&2
+    exit 50
+fi
+
+echo "${workspaceNames[${workspaceIndex}]}"
+

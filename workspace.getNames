@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if ! which xfconf-query >&/dev/null; then
+    echo "ERROR: Could not find xfconf-query in \$PATH" >&2
+    exit 1
+fi
+
+xfconf-query \
+    -c xfwm4 \
+    -p /general/workspace_names \
+    | tail -n +3
