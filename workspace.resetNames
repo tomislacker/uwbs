@@ -1,0 +1,29 @@
+#!/bin/bash
+
+###
+# Enumerate all workspace names
+###
+workspaceNames=( )
+while read -r workspaceName; do
+    workspaceNames+=( "$workspaceName" )
+done < <(workspace.getNames)
+
+###
+# Reset *ALL* workspace names...
+###
+xconfArgs=( \
+  -c xfwm4 \
+  -p /general/workspace_names \
+)
+
+for workspaceIndex in $(seq 0 $((${#workspaceNames[*]}-1))); do
+  xconfArgs+=( \
+    '-s' \
+    "'Workspace $((${workspaceIndex}+1))'" \
+  )
+done
+
+echo xfconf-query ${xconfArgs[*]}
+eval xfconf-query ${xconfArgs[*]}
+
+
