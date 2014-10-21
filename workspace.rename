@@ -1,0 +1,52 @@
+#!/bin/bash
+
+workspaceIndex=$1
+workspaceName=$2
+
+###
+# Sanity Check
+###
+if [ -z "$workspaceIndex" ]; then
+  echo "ERROR: No \$workspaceIndex provided" >&2
+  exit 1
+elif [ "$workspaceName" == "-" ]; then
+  workspaceName="Workspace $((${workspaceIndex}+1))"
+elif [ -z "$workspaceName" ]; then
+  workspaceName=$(zenity --entry --title="Workspace[${workspaceIndex}] Name" --text="New Name:" --entry-text="$(workspace.getName ${workspaceIndex})")
+fi
+
+###
+# Reset *ALL* workspace names...
+###
+xconfArgs=( \
+  -c xfwm4 \
+  -p /general/workspace_names \
+)
+
+currentIndex=0
+while read -r thisWorkspaceName; do
+  if [[ $currentIndex -eq $workspaceIndex ]]; then
+    thisWorkspaceName="${workspaceName}"
+    workspaceIndex=-1
+  fi
+
+  xconfArgs+=( \
+    "-s " \
+    "\"${thisWorkspaceName}\"" \
+  )
+
+  let currentIndex++
+
+done < <(workspace.getNames)
+
+if [[ $workspaceIndex -ne -1 ]]; then
+  ###
+  # No changes were made
+  ###
+  echo "ERROR: No changes made" >&2
+  echo -e "\tInvalid \$workspaceIndex ?" >&2
+  exit 55
+fi
+
+eval xfconf-query ${xconfArgs[*]}
+
