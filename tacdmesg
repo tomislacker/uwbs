@@ -1,0 +1,4 @@
+#!/bin/bash
+
+watch --color -tn 1 "dmesg -T | tail -n \$(tput lines) | tac | ccze -A"
+

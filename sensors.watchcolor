@@ -1,0 +1,9 @@
+#!/bin/bash
+
+REFRESH=${1:-1}
+watch \
+    --color \
+    -t \
+    -n $REFRESH \
+    'sensors |ccze -A'
+
