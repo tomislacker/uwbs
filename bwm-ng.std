@@ -1,0 +1,20 @@
+#!/bin/bash
+
+for requiredBin in bwm-ng ip egrep cut sed echo; do
+	if ! which $requiredBin >>/dev/null 2>&1; then
+		echo "'${requiredBin}' not found in \$PATH" >&2
+		exit 1
+	fi
+done
+
+getDefaultGateways ()
+{
+	ip route | egrep '^default' | egrep -o 'dev\s+[^\s]+' | cut -d' ' -f2
+}
+
+getListAsCSV ()
+{
+	echo "$*" | sed 's/\s\+/,/g'
+}
+
+bwm-ng -a 0 -I $(getListAsCSV $(getDefaultGateways)) --unit bits -t 1000 -d
