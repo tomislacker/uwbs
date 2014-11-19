@@ -1,0 +1,13 @@
+#!/bin/bash
+
+strToMac="$*"
+
+strToMac=$(echo "$strToMac" | tr '[[:lower:]]' '[[:upper:]]')
+
+if [[ ${#strToMac} -ne 12 ]]; then
+    echo "ERR: Must be passed a 12str char. Received ${#strToMac}" >&2
+    exit 1
+fi
+
+echo "${strToMac:0:2}:${strToMac:2:2}:${strToMac:4:2}:${strToMac:6:2}:${strToMac:8:2}:${strToMac:10:2}"
+
