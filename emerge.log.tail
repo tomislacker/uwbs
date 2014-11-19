@@ -1,0 +1,53 @@
+#!/bin/bash
+
+EMERGE_LOG_PATH=${EMERGE_LOG_PATH:-'/var/log/emerge.log'}
+TAIL_ADD_PERCENT=20
+TAIL_ADD_LINES=
+
+USE_CCZE=y
+
+getTailLinesByPercent ()
+{
+    local percentAdd=${1:-30}
+    local termLines=${2:-$(tput lines 2>>/dev/null)}
+
+    echo "scale=5; ${termLines}*$((100+${percentAdd}))/100" \
+        | bc \
+        | awk '{printf("%d\n",$1 + 0.5)}'
+}
+
+getTailLinesByAddition ()
+{
+    local countAdd=${1:-10}
+    local termLines=${2:-$(tput lines 2>>/dev/null)}
+
+    echo $((${countAdd}+${termLines}))
+}
+
+# Ensure log exists...
+if [ ! -e "$EMERGE_LOG_PATH" ]; then
+    echo "Emerge log at '${EMERGE_LOG_PATH}' does not exist..." >&2
+    exit 1
+fi
+
+# By default, don't show any lines so far
+tailLines=0
+if [ -n "$TAIL_ADD_PERCENT" ]; then
+    tailLines=$(getTailLinesByPercent ${TAIL_ADD_PERCENT})
+elif [ -n "$TAIL_ADD_LINES" ]; then
+    tailLines=$(getTailLinesByAddition ${TAIL_ADD_LINES})
+fi
+
+tailArgs=( \
+    "-F" \
+    "-n ${tailLines}" \
+    "${EMERGE_LOG_PATH}" \
+)
+
+if [ -n "$USE_CCZE" ]; then
+    tail ${tailArgs[*]} \
+        | ccze -A
+else
+    tail ${tailArgs[*]}
+fi
+
