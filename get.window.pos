@@ -1,0 +1,19 @@
+#!/bin/bash
+
+WINDOW_ID=${1}
+
+if [ -z "$WINDOW_ID" ]; then
+    WINDOW_ID=$(xdotool getactivewindow 2>>/dev/null)
+fi
+
+echo '::::::::::::::'
+echo ':: xwininfo ::'
+echo '::::::::::::::'
+xwininfo -id $WINDOW_ID
+
+echo
+echo ':::::::::::::::::::::::'
+echo ':: getwindowgeometry ::'
+echo ':::::::::::::::::::::::'
+xdotool getwindowgeometry $WINDOW_ID \
+    | egrep -v -e '^findclient:\s+[0-9]+$'
