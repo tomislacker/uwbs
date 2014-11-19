@@ -1,0 +1,11 @@
+#!/bin/bash
+
+PACKAGE=$1
+
+if ! eix -e $PACKAGE ; then
+    eix -c $PACKAGE
+else
+    echo
+    equery uses $PACKAGE
+fi
+
