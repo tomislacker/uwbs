@@ -1,0 +1,8 @@
+#!/bin/bash
+
+DEFAULT_MAX_LINES=$(tput lines)
+MAX_LINES=${MAX_LINES:-${DEFAULT_MAX_LINES}}
+REFRESH_INTERVAL=1
+
+watch --color -tn ${REFRESH_INTERVAL} "dmesg -T | tail -n ${MAX_LINES} | tac | ccze -A"
+
