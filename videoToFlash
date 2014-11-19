@@ -1,0 +1,43 @@
+#!/bin/bash
+
+
+FLV_OUTPUT_FPS=${FLV_OUTPUT_FPS:-25}
+FLV_OUTPUT_V_BITRATE=200
+FLV_OUTPUT_V_QMIN=7
+FLV_OUTPUT_V_QMAX=10
+
+FLV_OUTPUT_A_SAMPLE=22050
+FLV_OUTPUT_A_CHANNELS=2
+
+# Ensure *something* was supplied
+if [[ $# -eq 0 ]]; then
+	echo "You must specify some videos to convert to flash" 1>&2
+	exit 1
+fi
+
+for vidArg in $@ ; do
+    vidPath=$(readlink -m "$vidArg")
+
+    # Ensure src video path exists
+    if [ ! -e "$vidPath" ]; then
+        echo "WARN: Video does not exist at '${vidPath}'" >&2
+        continue
+    fi
+
+    # Determine destination flv path
+    vidFlv=$(echo "$vidPath" | sed 's/\(.*\)\..*/\1/')
+
+    # Conduct the actual encoding...
+    mencoder \
+        -ofps ${FLV_OUTPUT_FPS} \
+        "${vidPath}" \
+        -of lavf \
+        -lavfopts format=flv \
+        -ovc lavc \
+        -lavcopts vcodec=flv:autoaspect:vbitrate=${FLV_OUTPUT_V_BITRATE}:vqmin=${FLV_OUTPUT_V_QMIN}:vqmax=${FLV_OUTPUT_V_QMAX} 1:vme=5:mbd=1ubq=5:keyint=250 \
+        -af resample=${FLV_OUTPUT_A_SAMPLE}:0:0,channels=${FLV_OUTPUT_A_CHANNELS} \
+        -oac mp3lame \
+        -lameopts vbr=2:q=6:aq=2:highpassfreq=-1:lowpassfreq=-1 \
+        -o "${vidFlv}"
+done
+
