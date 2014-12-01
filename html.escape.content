@@ -1,0 +1,21 @@
+#!/bin/bash
+
+TEMP_SUFFIX='.htmlescape'
+
+getTempFilename ()
+{
+    mktemp --suffix="${TEMP_SUFFIX}"
+}
+
+# Determine our temporary file to use
+TEMP_FILENAME=$(getTempFilename)
+
+# Ensure our temporary file is removed
+trap "rm -f '${TEMP_FILENAME}'" EXIT
+
+# Open our temp file
+nano "$TEMP_FILENAME" || exit 0
+
+# Determine what to do with the escaped content
+( recode ascii...html < $TEMP_FILENAME ) | xclip -select clipboard
+
