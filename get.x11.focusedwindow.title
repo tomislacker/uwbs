@@ -1,0 +1,66 @@
+#!/bin/bash
+
+DO_LOOP=y
+LOOP_DELAY=1
+
+if ! which xprop >&/dev/null ; then
+    echo "ERROR: $0 cannot run without 'xprop' in \$PATH" >&2
+    exit 1
+fi
+
+getFocusedWindowID ()
+{
+    xprop -root \
+        | egrep -o '_NET_ACTIVE_WINDOW\(WINDOW\):\s*window\s*id\s*#\s*0x[a-fA-F0-9]+' \
+        | egrep -o '0x[a-fA-F0-9]+'
+}
+
+getWindowTitleByIDNoTrunc ()
+{
+    local windowID=$1
+    #echo "[getWindowTitleByID('${windowID}')"
+    xprop -id $windowID WM_NAME \
+        | sed 's/^[^"]\+//g' \
+        | sed 's/"\([^"]\+\)"[^"]*$/\1/g'
+}
+
+getWindowTitleByID ()
+{
+    local windowID=$1
+    local windowTitle="$(getWindowTitleByIDNoTrunc ${windowID})"
+    local titleMaxLength=48
+    local truncateString="..."
+    local limitLength=$((${titleMaxLength}-${#truncateString}))
+    local smallTitleString="${windowTitle:0:${limitLength}}"
+
+    [[ ${#windowTitle} -gt ${#limitLength} ]] \
+        && smallTitleString="${smallTitleString}${truncateSTring}"
+    echo $smallTitleString
+}
+
+getPIDByWindowID ()
+{
+    local windowID=$1
+    xprop -id $windowID _NET_WM_PID \
+        | egrep -o '[0-9]+$'
+}
+
+getFocusedWindowTitle ()
+{
+    #echo "[getFocusedWindowTitle()] getWindowTitleByID $(getFocusedWindowID)"
+    getWindowTitleByID $(getFocusedWindowID)
+}
+
+if [ -n "$DO_LOOP" ]; then
+    while [ true ]; do
+        currentID=$(getFocusedWindowID)
+        currentTitle="$(getWindowTitleByID ${currentID})"
+        longTitle="$(getWindowTitleByIDNoTrunc ${currentID})"
+        currentPID=$(getPIDByWindowID ${currentID})
+
+        echo "[$(date +%s)][${currentID}][${#currentTitle}/${#longTitle}][PID:${currentPID}] '${currentTitle}'"
+        sleep $LOOP_DELAY
+    done
+else
+    getFocusedWindowTitle
+fi
