@@ -2,9 +2,25 @@
 
 BIN_PREFIX=/usr/local/bin
 SET_MODE=755
-SET_OWNER=root
-SET_GROUP=root
+SET_OWNER=
+SET_GROUP=
 SET_NAME=
+
+getDefaultOwner ()
+{
+    whoami
+}
+
+getDefaultOwnerGroup ()
+{
+    local thisUser=$1
+
+    [ -z "$thisUser" ] \
+        && thisUser=$(getDefaultOwner)
+
+    getent group ${thisUser} \
+        | egrep -o '^[^:]+'
+}
 
 newBinScript_dumpConfig ()
 {
@@ -66,6 +82,16 @@ done
 #newBinScript_dumpConfig
 NEW_FILE_PATH="${BIN_PREFIX}/${SET_NAME}"
 
+# Ensure certain default values
+if [ -z "$SET_OWNER" ]; then
+    SET_OWNER=$(getDefaultOwner)
+fi
+
+if [ -z "$SET_GROUP" ]; then
+    SET_GROUP=$(getDefaultOwnerGroup ${SET_OWNER})
+fi
+
+# Sanity check any provided values
 if [[ ${#SET_NAME} -eq 0 ]]; then
 	echo "Must specify filename with -n" 1>&2
 	newBinScript_usage
