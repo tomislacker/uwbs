@@ -1,0 +1,58 @@
+#!/bin/bash
+
+RECENT_COUNT=5
+
+showContextTitle ()
+{
+    local title=$@
+    local titlePadChar=":"
+    local titlePadWidth=2
+    local titlePad=
+    local titleLine=
+    local titleBorder=
+
+    for i in $(seq 1 ${titlePadWidth}); do
+        titlePad="${titlePad}${titlePadChar}"
+    done
+
+    titleLine="${titlePad} ${title} ${titlePad}"
+
+    for i in $(seq 1 ${#titleLine}); do
+        titleBorder="${titleBorder}${titlePadChar}"
+    done
+
+    echo -e "${titleBorder}\n${titleLine}\n${titleBorder}"
+}
+
+echo ":: $(pwd) ::"
+echo
+
+showContextTitle git status
+
+git status | egrep -v '^\s*$' | ccze -A
+echo
+
+showContextTitle Last Commit
+
+git log -1 HEAD --color=always
+echo
+git diffstat --color=always HEAD~1
+echo
+
+showContextTitle "Recent(${RECENT_COUNT}) Commits"
+
+git log \
+    --graph \
+    --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' \
+    --abbrev-commit \
+    --date=relative \
+    -n ${RECENT_COUNT}
+
+echo
+echo
+
+git diffstat --color=always HEAD~${RECENT_COUNT}
+echo
+
+showContextTitle Branches
+git branch --color=always --all -vv
