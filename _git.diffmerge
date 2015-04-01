@@ -1,0 +1,92 @@
+#!/bin/bash
+
+SHOW_DIFF_BEFORE_MENU=y
+
+TEMP_NAME_LIST=$(mktemp)
+
+exitCleanup ()
+{
+    rm -f "$TEMP_NAME_LIST" >&/dev/null
+}
+
+abortAndExit ()
+{
+    local exitStatus=${1:-100}
+    shift
+    local fatalMsg=$@
+    
+    if [ -n "$fatalMsg" ]; then
+        echo -e "$fatalMsg" >&2
+    fi
+    exit $exitStatus
+}
+
+brokenDiffExit ()
+{
+    abortAndExit \
+        50 \
+        'git diff --name-only :: failed'
+}
+
+showFileDiff ()
+{
+    local diffFile=$@
+    echo
+    git \
+        --no-pager \
+        diff $diffFile
+    echo
+}
+
+stageFile ()
+{
+    local diffFile=$@
+    git add -- $diffFile
+}
+
+resetFile ()
+{
+    local diffFile=$@
+    git checkout -- $diffFile
+}
+
+trap "exitCleanup" EXIT
+
+git diff --name-only \
+    2>>/dev/null \
+    >"$TEMP_NAME_LIST" \
+    || brokenDiffExit
+
+while read -r -u 3 diffFile; do 
+    while [ true ]; do
+        [ -n "$SHOW_DIFF_BEFORE_MENU" ] \
+            && showFileDiff $diffFile
+        echo -e  "File: '${diffFile}'"
+        echo -en "\tChoose \n\t\t([g]reen)[a]dd\n\t\t([r]ed)[c]heckout\n\t\t[d]iff\n\t\t[i]gnore: "
+        
+        read c
+        
+        case $c in
+            a|g)
+                echo -e "\t -> Staging '${diffFile}'"
+                stageFile $diffFile
+                sleep 1
+                break
+                ;;
+            c|r)
+                echo -e "\t -> Resetting '${diffFile}'"
+                resetFile $diffFile
+                sleep 1
+                break
+                ;;
+            d)
+                showFileDiff $diffFile
+                continue
+                ;;
+            i)
+                break
+                ;;
+        esac
+    done
+done 3< "$TEMP_NAME_LIST"
+
