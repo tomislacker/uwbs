@@ -1,0 +1,10 @@
+#!/bin/bash
+
+TMP_FILE=$(mktemp)
+
+trap "rm -f ${TMP_FILE}" EXIT
+
+${EDITOR:-'vi'} $TMP_FILE
+
+sed 's/^/> /g' $TMP_FILE \
+    | xclip -select clipboard
