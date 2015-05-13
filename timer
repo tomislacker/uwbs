@@ -1,0 +1,46 @@
+#!/bin/bash
+
+ICON=~/.icons/kalarm.png	
+COUNT=$1
+
+if [ -z "$COUNT" ]; then
+    COUNT=$(zenity \
+        --title "Egg Timer" \
+        --window-icon $ICON \
+        --text "No decimals" \
+        --entry-text "eg. 10s or 5m or 2h" \
+        --entry \
+        2>>/dev/null
+    )
+    [[ $? -ne 0 ]] && exit $?
+fi
+
+# Determine number of seconds to count down from depending on input suffix.
+case "${COUNT: -1}" in
+    "S" | "s" ) COUNT=$(echo $COUNT | sed -s "s/[Ss]//") ;;
+    "M" | "m" ) COUNT=$(echo $COUNT | sed -s "s/[Mm]//"); ((COUNT*=60)) ;;
+    "H" | "h" ) COUNT=$(echo $COUNT | sed -s "s/[Hh]//"); ((COUNT*=3600)) ;;
+    *         ) zenity \
+                    --error \
+                    --text "Use the form of 10s or 5m or 2h\nNo decimals allowed either." \
+                    2>>/dev/null
+    sh -c "$0"
+    exit ;;
+esac
+
+START=$COUNT                                              # Set a start point. 
+
+until [ "$COUNT" -eq "0" ]; do                            # Countdown loop.
+    ((COUNT-=1))                                          # Decrement seconds.
+    PERCENT=$((100-100*COUNT/START))                      # Calc percentage.
+    echo "#Time remaining$(echo "obase=60;$COUNT" | bc)"  # Convert to H:M:S.
+    echo $PERCENT                                         # Outut for progbar.
+    sleep 1
+done \
+    | zenity \
+        --title "Egg Timer" \
+        --progress \
+        --percentage=0 \
+        --text="" \
+        --window-icon=$ICON \
+        --auto-close 2>>/dev/null
