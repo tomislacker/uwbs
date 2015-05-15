@@ -1,6 +1,10 @@
 #!/bin/bash
 
-RECENT_COUNT=5
+DEFAULT_GIT_LOG_PRETTY_FORMAT="%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset"
+DEFAULT_RECENT_COUNT=5
+
+GIT_LOG_PRETTY_FORMAT=${GIT_LOG_PRETTY_FORMAT:-${DEFAULT_GIT_LOG_PRETTY_FORMAT}}
+RECENT_COUNT=${RECENT_COUNT:-${DEFAULT_RECENT_COUNT}}
 
 showContextTitle ()
 {
@@ -27,32 +31,109 @@ showContextTitle ()
 echo ":: $(pwd) ::"
 echo
 
-showContextTitle git status
+# Only show `git status` if there are changes present
+if [[ $(git status --porcelain | wc -l) -gt 0 ]]
+then
+    showContextTitle git status
 
-git status | egrep -v '^\s*$' | ccze -A
-echo
+    git status | egrep -v '^\s*$' | ccze -A
+    echo
+fi
 
-showContextTitle Last Commit
+git_log_data=$(git log -1 HEAD --color=always)
 
-git log -1 HEAD --color=always
-echo
-git diffstat --color=always HEAD~1
-echo
+if [[ $? -eq 0 ]]
+then
+    showContextTitle Last Commit
 
-showContextTitle "Recent(${RECENT_COUNT}) Commits"
+    echo "${git_log_data}"
 
-git log \
-    --graph \
-    --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' \
-    --abbrev-commit \
-    --date=relative \
-    -n ${RECENT_COUNT}
+    git_diffstat_last=$(git diffstat --color=always HEAD~1)
 
-echo
-echo
+    if [[ $? -ne 0 ]]
+    then
+        echo -e "\n\t... Diffstat last unavailable\n" >&2
+    else
+        echo "${git_diffstat_last}\n"
+    fi
+    echo
+fi
 
-git diffstat --color=always HEAD~${RECENT_COUNT}
-echo
+commit_count=$RECENT_COUNT
 
-showContextTitle Branches
-git branch --color=always --all -vv
+git_log_basic_args=(
+    --graph
+    --abbrev-commit
+    --date=relative
+)
+
+while [[ $commit_count -gt 0 ]]
+do
+    git_log_args=(
+        ${git_log_basic_args[*]}
+        -n ${commit_count}
+    )
+    git_log_events=$(git log \
+        --pretty=format:"'${GIT_LOG_PRETTY_FORMAT}'" \
+        ${git_log_args[*]} \
+    )
+    git_log_exit=$?
+
+    if [[ $git_log_exit -ne 0 ]]
+    then
+        let commit_count=$((${commit_count}-1))
+        continue
+    fi
+
+    showContextTitle "Recent(${commit_count}) Commits"
+    echo -e "${git_log_events}\n\n"
+    break
+done
+
+commit_count=$RECENT_COUNT
+
+window_width=$(tput cols)
+name_width=$window_width
+
+git_diffstat_basic_args=(
+    --stat=${window_width},${name_width},${commit_count}
+    -r
+    --color=always
+)
+
+while [[ $commit_count -gt 0 ]]
+do
+    git_diff_args=(
+        ${git_diffstat_basic_args[*]}
+        HEAD~${commit_count}
+    )
+
+    git_diff=$(git diff ${git_diff_args[*]} 2>>/dev/null)
+    git_diff_exit=$?
+
+    if [[ $git_diff_exit -ne 0 ]]
+    then
+        let commit_count=$((${commit_count}-1))
+        continue
+    fi
+
+    showContextTitle "Recent(${commit_count}) Commits"
+    echo -e "${git_diff}\n\n"
+    break
+done
+
+git_br_all=$(git branch \
+    --color=always \
+    --all \
+    -vv \
+    2>>/dev/null \
+)
+git_br_all_exit=$?
+
+if [[ $git_br_all_exit -eq 0 ]]
+then
+    showContextTitle Branches
+    echo "$git_br_all"
+else
+    echo -e "\n\tUnable to get branches..." >&2
+fi
