@@ -25,6 +25,8 @@ GUI_TERM=$(which ${COLORTERM})
 ###
 ZENITY_ERROR_ON_FATAL=y
 
+TERM_TITLE="MixerTerm"
+
 ########################
 # Function Definitions #
 ########################
@@ -100,6 +102,12 @@ if [ -z "$MIXER_CMD" ]
 then
     fatal.err 10 \
         "Mixer command '${MIXER_CMD}' is invalid."
+fi
+
+# Specify a title?
+if [ -n "$TERM_TITLE" ]
+then
+    term_args+=( "--title" "${TERM_TITLE}" )
 fi
 
 # Launch the GUI window
