@@ -18,7 +18,9 @@ MIXER_CMD=alsamixer
 ###
 # Define application to launch a GUI-terminal with the mixer program
 ###
+DEFAULT_GUI_TERM=$(which xfce4-terminal)
 GUI_TERM=$(which ${COLORTERM})
+GUI_TERM=${GUI_TERM:-${DEFAULT_GUI_TERM}}
 
 ###
 # Should zenity be used on fatal errors?
