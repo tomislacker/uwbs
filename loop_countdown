@@ -2,9 +2,35 @@
 
 COUNTDOWN_PARAM="$@"
 
-ONLY_HOURS=$((4*60*60))
-ONLY_MINUTES=$((1*60))
+###
+# Define default values for when to print a sitrep based on when a unit of
+# time is greater-than-or-equal-to a defined value
+###
+DEFAULT_WHEN_HOURS=4
+DEFAULT_WHEN_MINUTES=1
+DEFAULT_WHEN_SECONDS=30
 
+###
+# Read ENV variables to see if any timeframes are being overridden for when
+# a sitrep should be outputted when a unit of time is greater-than-or-equal-to
+# a defined value
+###
+ONLY_WHEN_HOURS=${ONLY_WHEN_HOURS:-${DEFAULT_WHEN_HOURS}}
+ONLY_WHEN_MINUTES=${ONLY_WHEN_MINUTES:-${DEFAULT_WHEN_MINUTES}}
+ONLY_WHEN_SECONDS=${ONLY_WHEN_SECONDS:-${DEFAULT_WHEN_SECONDS}}
+
+###
+# From the above settings for when to print a sitrep, determine those
+# timeframes in seconds
+###
+ONLY_HOURS=$((${ONLY_WHEN_HOURS}*60*60))
+ONLY_MINUTES=$((${ONLY_WHEN_MINUTES}*60))
+ONLY_SECONDS=${ONLY_WHEN_SECONDS}
+
+###
+# Determine whether or not we should really sleep and delay time.  Disabling
+# this is very helpful during debugging
+###
 NO_SLEEP=${NO_SLEEP}
 
 if [ -z "$COUNTDOWN_PARAM" ]
@@ -38,22 +64,31 @@ param_to_seconds ()
         local unit=$(param_get_unit ${arg})
         local scalar=$(param_get_scalar ${arg})
 
-        if [ "${unit:0:1}" == "s" ]
+        if [ "${unit:0:1}" == "d" ]
         then
-            multiplier=1
-        elif [ "${unit:0:1}" == "m" ]
-        then
-            multiplier=60
+            # Timespec is in days, set multiplier to seconds
+            multiplier=$((24*60*60))
         elif [ "${unit:0:1}" == "h" ]
         then
+            # Timespec is in hours, set multiplier to seconds
             multiplier=$((60*60))
-        elif [ "${unit:0:1}" == "d" ]
+        elif [ "${unit:0:1}" == "m" ]
         then
-            multiplier=$((24*60*60))
+            # Timespec is in minutes, set multiplier to seconds
+            multiplier=60
+        elif [ "${unit:0:1}" == "s" ]
+        then
+            # Timespec is in seconds, set multiplier to seconds
+            multiplier=1
+        else
+            # Unknown timespec, set multiplier to 0 to ensure no issues
+            multiplier=0
         fi
 
         if [[ $multiplier -gt 0 ]]
         then
+            # If there's a multiplier to find seconds, compute it now and add
+            # it to the number of seconds that need to be waited for
             let total_seconds+=$((${scalar}*${multiplier}))
         fi
     done
@@ -69,29 +104,56 @@ show_loop_countdown ()
 
     while [[ $wait_seconds -gt 0 ]]
     do
+        show_output=
         left_hrs=$((${wait_seconds}/(60*60)))
         left_min=$(((${wait_seconds}-(${left_hrs}*60*60))/(60)))
         left_sec=$(((${wait_seconds}-(${left_hrs}*60*60))%(60)))
 
-        if [[ $wait_seconds -ge ${ONLY_HOURS} ]]
+        if [ -n "$first_run" ]
         then
-            if [[ ${left_min} -eq 0 ]] || [ -n "$first_run" ]
-            then
-                first_run=
-                echo "${left_hrs}h, ${left_min}m, ${left_sec}s; remaing..."
-            fi
-        elif [[ $wait_seconds -ge ${ONLY_MINUTES} ]]
-        then
-            if [[ ${left_sec} -eq 0 ]] || [ -n "$first_run" ]
-            then
-                first_run=
-                echo "${left_min}m, ${left_sec}s; remaing..."
-            fi
+            show_output=y
+            first_run=
         else
-            echo "${left_hrs}h, ${left_min}m, ${left_sec}s; remaing..."
+            if [[ $wait_seconds -ge ${ONLY_HOURS} ]]
+            then
+                # Only show time when minutes == 00
+                # This means once per hour when the 
+                [[ $((${wait_seconds}%(60*60))) -eq 0 ]] \
+                    && show_output=y
+            elif [[ $wait_seconds -ge ${ONLY_MINUTES} ]]
+            then
+                # Only show time when seconds == 00
+                # This means once per minute
+                [[ $((${wait_seconds}%60)) -eq 0 ]] \
+                    && show_output=y
+            elif [[ $wait_seconds -lt ${ONLY_MINUTES} ]] && [[ $wait_seconds -ge ${ONLY_SECONDS} ]]
+            then
+                # Only show time when seconds % 10 == 0
+                # This means every 10 seconds
+                [[ $((${left_sec}%10)) -eq 0 ]] \
+                    && show_output=y
+            elif [[ $wait_seconds -lt ${ONLY_MINUTES} ]]
+            then
+                # Show every second at this point
+                show_output=y
+            fi
         fi
 
-        sleep 1
+        ###
+        # Now perform printing if required
+        ###
+        if [ -n "$show_output" ]
+        then
+            out_str=
+
+            out_str+="$(printf "%02d" ${left_hrs}):"
+            out_str+="$(printf "%02d" ${left_min}):"
+            out_str+="$(printf "%02d" ${left_sec})"
+            echo "${out_str} remaining..."
+        fi
+
+        [ -z "$NO_SLEEP" ] \
+            && sleep 1
         let wait_seconds-=1
     done
 }
