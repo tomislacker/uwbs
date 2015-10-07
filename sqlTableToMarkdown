@@ -1,0 +1,27 @@
+#!/bin/bash
+
+sql_table_to_md ()
+{
+    sql_table_trim_top_line \
+        | sql_table_trim_bottom_line \
+        | sql_table_fix_header_line
+}
+
+sql_table_trim_top_line ()
+{
+    sed '1d'
+}
+
+sql_table_trim_bottom_line ()
+{
+    sed '$ d'
+}
+
+sql_table_fix_header_line ()
+{
+    sed 's/^+-/| /g' \
+        | sed 's/-+-/ | /g' \
+        | sed 's/-+$/ |/g'
+}
+
+sql_table_to_md
