@@ -1,5 +1,17 @@
 #!/bin/bash
 
+###########
+# Example #
+###########
+# $ mysql -hlocalhost -t -e "SELECT NOW() as CurrentStamp" | sqlTableToMarkdown
+#
+############
+# Outputs: #
+############
+# | CurrentStamp        |
+# | ------------------- |
+# | 2015-10-21 14:21:44 |
+
 sql_table_to_md ()
 {
     sql_table_trim_top_line \
