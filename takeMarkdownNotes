@@ -1,0 +1,71 @@
+#!/bin/bash
+
+NOTES_DIR=~/Documents
+
+SCRIPT_PATH=$(readlink -m ${0})
+SCRIPT_NAME=$(basename ${SCRIPT_PATH})
+
+getNoteDate ()
+{
+    date +'%Y.%m.%d'
+}
+
+getNoteTitle ()
+{
+    local title=$(zenity --entry --text="Notes Title: " 2>>/dev/null)
+
+    if [ -z "$title" ]
+    then
+        notify-send -t 3000 \
+            ${SCRIPT_NAME} \
+            'No title specified'
+        exit 1
+    fi
+
+    echo $title
+}
+
+getFileName ()
+{
+    local fixed_title=$(sed 's/[^0-9a-zA-Z\.-]\+/_/g; s/_\+/_/g;' <<<$@)
+    local snippet=$(zenity --entry --text="Filename Snippet: " --entry-text="${fixed_title}" 2>>/dev/null)
+
+    if [ -z "$snippet" ]
+    then
+        notify-send -t 3000 \
+            ${SCRIPT_NAME} \
+            'No filename snippet specified'
+        exit 1
+    fi
+
+    echo "$(getNoteDate)_${snippet}.md"
+}
+
+createFile ()
+{
+    local filename=$1
+    local title=$2
+
+    if [ -e "$filename" ]
+    then
+        # File already exists, do not overwrite
+        notify-send -t 2000 \
+            ${SCRIPT_NAME} \
+            "File already exists: ${filename}"
+        return 0
+    fi
+
+    cat<<EOF>${filename}
+# $(getNoteDate) - ${title}
+
+EOF
+}
+
+title=$(getNoteTitle)
+filename=$(getFileName ${title})
+filepath="${NOTES_DIR}/${filename}"
+createFile "$filepath" "$title"
+
+gedit "$filepath" >&/dev/null &
+disown
+
