@@ -11,12 +11,13 @@ getDefaultGateways ()
 {
 	ip route \
         | egrep '^default' \
-        | egrep -o 'dev\s+[^\s]+' \
+        | egrep -o 'dev\s+[^ ]+' \
         | cut -d' ' -f2
 }
 
 getListAsCSV ()
 {
+    echo "getListAsCSV($@)" 1>&2
 	echo "$*" | sed 's/\s\+/,/g'
 }
 
