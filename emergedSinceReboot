@@ -1,0 +1,3 @@
+#!/bin/bash
+
+genlop --list --date $(date -d"$(who -b | sed 's/^.*system boot//g')" +"%Y/%m/%d")
