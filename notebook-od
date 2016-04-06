@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Define what python version to use
+PY_VERSION=python2.7
+
+# Define a path to a virtualenv
+VENV_PATH=$(mktemp -d)
+
+# Ensure to remove the virtualenv when done
+trap "rm -fr ${VENV_PATH}" EXIT
+
+# Create the virtualenv
+virtualenv -p ${PY_VERSION} ${VENV_PATH}
+
+# Install the jupyter platform to the virtualenv
+${VENV_PATH}/bin/pip install jupyter
+
+# Launch the jupyter notebook
+${VENV_PATH}/bin/jupyter-notebook $@
