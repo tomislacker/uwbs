@@ -1,0 +1,36 @@
+#!/bin/bash
+
+attempt_session ()
+{
+    local session_name=$@
+    tmux new-session \
+        -s "$session_name"
+}
+
+do_tmhere ()
+{
+    local start_num=${1:-1}
+    local here_dir=$(pwd)
+
+    # Determine the name of the directory's session
+    local prefix=$(basename "${here_dir}" \
+        | tr '.' '-' \
+        | tr ' ' '-')
+
+    # Attempt to start the tmux session w/o a numeric suffix
+    attempt_session ${prefix} && return
+
+    # That failed, keep adding on numbers to the end until we
+    # find a good one
+    local curr_suffix=$start_num
+    for i in $(seq 1 10)
+    do
+        attempt_session ${prefix}${curr_suffix} && return
+        let curr_suffix+=1
+    done
+
+    echo -e "ERROR: Could not find an available session name" >&1
+    exit 10
+}
+
+do_tmhere $@
