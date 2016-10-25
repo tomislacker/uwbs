@@ -3,7 +3,7 @@
 if [ "${1:0:1}" == "w" ]
 then
     # Watch mode
-    watch --color -cn 1 "$0"
+    watch --color -cn ${2:-2} "$0"
 fi
 
 DEFAULT_GIT_LOG_PRETTY_FORMAT="%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset"
