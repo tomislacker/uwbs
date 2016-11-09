@@ -1,5 +1,8 @@
 #!/bin/bash
 
+DEFAULT_GTK_EDITOR=pluma
+GTK_EDITOR=${GTK_EDITOR:-${DEFAULT_GTK_EDITOR}}
+
 NOTES_DIR=~/Documents
 
 SCRIPT_PATH=$(readlink -m ${0})
@@ -66,6 +69,5 @@ filename=$(getFileName ${title})
 filepath="${NOTES_DIR}/${filename}"
 createFile "$filepath" "$title"
 
-gedit "$filepath" >&/dev/null &
+$GTK_EDITOR "$filepath" >&/dev/null &
 disown
-
